@@ -1,0 +1,2 @@
+# lektionsklocka
+Simple clock 
