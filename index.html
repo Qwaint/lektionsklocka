@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#101010">
 <title>Lektionsklocka</title>
-<!-- Lektionsklocka v1.3 -->
+<!-- Lektionsklocka v1.4 -->
 
 <style>
 :root{
@@ -16,7 +16,8 @@
   --fg:#f7f7f5;
   --muted:#a5a5a1;
   --danger:#e5484d;
-  --button:#242424
+  --button:#242424;
+  --line:#343434
 }
 
 *{box-sizing:border-box}
@@ -141,10 +142,7 @@ header{
   --fg:var(--danger)
 }
 
-.timer.danger #label{
-  color:var(--danger)
-}
-
+.timer.danger #label,
 .timer.danger #remaining{
   color:var(--danger)
 }
@@ -175,10 +173,31 @@ footer{
   padding:0 6px 8px
 }
 
+/* Nästa lektion under pågående lektion */
+
 #next{
-  font-size:clamp(16px,1.9vw,22px);
-  color:var(--muted);
-  min-height:28px
+  min-height:28px;
+  color:var(--muted)
+}
+
+.next-label{
+  font-size:clamp(15px,1.7vw,20px);
+  margin-bottom:2px
+}
+
+.next-main{
+  font-size:clamp(17px,2vw,23px);
+  line-height:1.25
+}
+
+.next-main strong{
+  color:var(--fg);
+  font-weight:650
+}
+
+.next-until{
+  font-size:clamp(16px,1.8vw,21px);
+  margin-top:2px
 }
 
 button{
@@ -187,8 +206,15 @@ button{
   padding:9px 13px;
   background:var(--button);
   color:var(--muted);
-  font-size:15px
+  font-size:15px;
+  cursor:pointer
 }
+
+button:hover{
+  color:var(--fg)
+}
+
+/* Dialog */
 
 dialog{
   width:min(760px,94vw);
@@ -201,7 +227,91 @@ dialog{
 }
 
 dialog::backdrop{
-  background:rgba(0,0,0,.55)
+  background:rgba(0,0,0,.58)
+}
+
+.dialog-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  margin-bottom:20px
+}
+
+.dialog-head h2{
+  margin:0;
+  font-size:25px
+}
+
+.dialog-head-actions{
+  display:flex;
+  gap:8px
+}
+
+/* Schemavy */
+
+#scheduleView{
+  overflow:auto
+}
+
+.day{
+  margin-top:23px
+}
+
+.day:first-child{
+  margin-top:0
+}
+
+.day-title{
+  color:var(--muted);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line)
+}
+
+.day.today .day-title{
+  color:var(--fg)
+}
+
+.day.today .day-title::after{
+  content:"  ·  idag";
+  color:var(--muted);
+  font-weight:500;
+  letter-spacing:0;
+  text-transform:none
+}
+
+.schedule-row{
+  display:grid;
+  grid-template-columns:120px 1fr auto;
+  gap:16px;
+  align-items:center;
+  padding:10px 2px;
+  border-bottom:1px solid #292929
+}
+
+.schedule-time{
+  color:var(--muted);
+  font-variant-numeric:tabular-nums
+}
+
+.schedule-name{
+  font-weight:620;
+  font-size:17px
+}
+
+.schedule-room{
+  color:var(--muted);
+  text-align:right
+}
+
+/* Editor */
+
+#editorView{
+  display:none
 }
 
 textarea{
@@ -228,9 +338,25 @@ textarea{
 }
 
 @media(max-width:700px){
-  main{padding:22px}
-  .timer{width:min(78vw,54vh)}
+
+  main{
+    padding:22px
+  }
+
+  .timer{
+    width:min(78vw,54vh)
+  }
+
+  .schedule-row{
+    grid-template-columns:95px 1fr auto;
+    gap:9px
+  }
+
+  dialog{
+    padding:18px
+  }
 }
+
 </style>
 </head>
 
@@ -272,22 +398,48 @@ textarea{
 
 <dialog id="dlg">
 
-<h2>Veckoschema</h2>
+  <!-- ÖVERSIKT -->
 
-<p class="help">
-En lektion per rad:
-<b>dag,start,slut,namn,sal</b><br>
-Exempel:
-<code>mån,10:40,11:30,EK25,417</code><br><br>
-Sal är frivilligt. Gamla rader utan sal fungerar också.
-</p>
+  <div id="overviewView">
 
-<textarea id="ta"></textarea>
+    <div class="dialog-head">
+      <h2>Veckoschema</h2>
 
-<div class="actions">
-  <button id="cancel">Avbryt</button>
-  <button id="save">Spara</button>
-</div>
+      <div class="dialog-head-actions">
+        <button id="editSchedule">Redigera</button>
+        <button id="closeSchedule">Stäng</button>
+      </div>
+    </div>
+
+    <div id="scheduleView"></div>
+
+  </div>
+
+
+  <!-- REDIGERING -->
+
+  <div id="editorView">
+
+    <div class="dialog-head">
+      <h2>Redigera schema</h2>
+    </div>
+
+    <p class="help">
+      En lektion per rad:
+      <b>dag,start,slut,namn,sal</b><br>
+      Exempel:
+      <code>mån,10:40,11:30,EK25,417</code><br><br>
+      Sal är frivilligt.
+    </p>
+
+    <textarea id="ta"></textarea>
+
+    <div class="actions">
+      <button id="cancel">Avbryt</button>
+      <button id="save">Spara</button>
+    </div>
+
+  </div>
 
 </dialog>
 
@@ -320,6 +472,16 @@ const names=[
   'tor',
   'fre',
   'lör'
+];
+
+const fullNames=[
+  'Söndag',
+  'Måndag',
+  'Tisdag',
+  'Onsdag',
+  'Torsdag',
+  'Fredag',
+  'Lördag'
 ];
 
 const dateNames=[
@@ -403,9 +565,7 @@ function occurrences(now,a){
         let e=tm(d,s.end);
 
         if(e<=b)
-          e.setDate(
-            e.getDate()+1
-          );
+          e.setDate(e.getDate()+1);
 
         o.push({
           ...s,
@@ -435,7 +595,10 @@ const ft=d=>
 
 function formatDate(d){
 
-  return `${dateNames[d.getDay()]} ${d.getDate()} ${d.toLocaleDateString('sv-SE',{month:'short'}).replace('.','')}`;
+  return `${dateNames[d.getDay()]} ${d.getDate()} ${d.toLocaleDateString(
+    'sv-SE',
+    {month:'short'}
+  ).replace('.','')}`;
 
 }
 
@@ -508,6 +671,93 @@ function bigUntil(ms){
 }
 
 
+/* -------------------------
+   Schemavy
+------------------------- */
+
+function renderSchedule(){
+
+  const schedule=parse(
+    localStorage.lessonSchedule || DEF
+  );
+
+  const today=new Date().getDay();
+
+  scheduleView.innerHTML='';
+
+  for(let day=1;day<=6;day++){
+
+    const lessons=schedule
+      .filter(x=>x.day===day)
+      .sort((a,b)=>a.start.localeCompare(b.start));
+
+    if(!lessons.length)
+      continue;
+
+
+    const group=document.createElement('div');
+
+    group.className=
+      'day' + (day===today ? ' today' : '');
+
+
+    const title=document.createElement('div');
+
+    title.className='day-title';
+    title.textContent=fullNames[day];
+
+    group.appendChild(title);
+
+
+    for(const s of lessons){
+
+      const row=document.createElement('div');
+
+      row.className='schedule-row';
+
+
+      const time=document.createElement('div');
+
+      time.className='schedule-time';
+      time.textContent=`${s.start}–${s.end}`;
+
+
+      const name=document.createElement('div');
+
+      name.className='schedule-name';
+      name.textContent=s.name;
+
+
+      const room=document.createElement('div');
+
+      room.className='schedule-room';
+      room.textContent=s.room
+        ?`sal ${s.room}`
+        :'';
+
+
+      row.append(
+        time,
+        name,
+        room
+      );
+
+      group.appendChild(row);
+
+    }
+
+
+    scheduleView.appendChild(group);
+
+  }
+
+}
+
+
+/* -------------------------
+   Klockan
+------------------------- */
+
 function update(){
 
   const now=new Date();
@@ -571,23 +821,38 @@ function update(){
 
 
     if(left<=5*60*1000)
-      timer.classList.add(
-        'danger'
-      );
+      timer.classList.add('danger');
 
 
-    next.textContent=nx
-      ?`Nästa: ${nx.name}${roomText(nx.room)} · ${names[nx.b.getDay()]} ${ft(nx.b)}–${ft(nx.e)} · om ${until(nx.b-now)}`
-      :'';
+    if(nx){
+
+      const room=
+        nx.room
+          ?`, sal ${nx.room}`
+          :'';
+
+      next.innerHTML=`
+        <div class="next-label">Nästa:</div>
+        <div class="next-main">
+          <strong>${nx.name}</strong>, ${ft(nx.b)}${room}
+        </div>
+        <div class="next-until">
+          Om ${until(nx.b-now)}
+        </div>
+      `;
+
+    }else{
+
+      next.innerHTML='';
+
+    }
 
   }
 
 
   else if(nx){
 
-    timer.classList.add(
-      'idle'
-    );
+    timer.classList.add('idle');
 
 
     lesson.textContent=
@@ -614,7 +879,7 @@ function update(){
     );
 
 
-    next.textContent='';
+    next.innerHTML='';
 
   }
 
@@ -635,25 +900,53 @@ function update(){
       '0deg'
     );
 
-    next.textContent='';
+    next.innerHTML='';
 
   }
 
 }
 
 
+/* -------------------------
+   Dialog
+------------------------- */
+
 edit.onclick=()=>{
 
-  ta.value=
-    localStorage.lessonSchedule || DEF;
+  overviewView.style.display='block';
+  editorView.style.display='none';
+
+  renderSchedule();
 
   dlg.showModal();
 
 };
 
 
-cancel.onclick=()=>
+closeSchedule.onclick=()=>{
+
   dlg.close();
+
+};
+
+
+editSchedule.onclick=()=>{
+
+  ta.value=
+    localStorage.lessonSchedule || DEF;
+
+  overviewView.style.display='none';
+  editorView.style.display='block';
+
+};
+
+
+cancel.onclick=()=>{
+
+  editorView.style.display='none';
+  overviewView.style.display='block';
+
+};
 
 
 save.onclick=()=>{
@@ -661,8 +954,10 @@ save.onclick=()=>{
   localStorage.lessonSchedule=
     ta.value;
 
-  dlg.close();
+  editorView.style.display='none';
+  overviewView.style.display='block';
 
+  renderSchedule();
   update();
 
 };
